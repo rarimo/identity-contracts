@@ -1,11 +1,11 @@
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-truffle5";
-import "@nomicfoundation/hardhat-ethers";
+import "@nomiclabs/hardhat-ethers";
+import "@typechain/hardhat";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@solarity/hardhat-migrate";
 import "@solarity/hardhat-gobind";
 import "@solarity/hardhat-markup";
-import "@typechain/hardhat";
 import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
@@ -23,11 +23,11 @@ function privateKey() {
 function typechainTarget() {
   const target = process.env.TYPECHAIN_TARGET;
 
-  return target === "" || target === undefined ? "ethers-v6" : target;
+  return target === "" || target === undefined ? "ethers-v5" : target;
 }
 
 function forceTypechain() {
-  return process.env.TYPECHAIN_FORCE === "false";
+  return process.env.TYPECHAIN_FORCE !== "false";
 }
 
 const config: HardhatUserConfig = {
@@ -50,24 +50,8 @@ const config: HardhatUserConfig = {
       accounts: privateKey(),
       gasMultiplier: 1.2,
     },
-    chapel: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-      accounts: privateKey(),
-      gasMultiplier: 1.2,
-      timeout: 60000,
-    },
     mumbai: {
       url: `https://rpc-mumbai.maticvigil.com/`,
-      accounts: privateKey(),
-      gasMultiplier: 1.2,
-    },
-    fuji: {
-      url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: privateKey(),
-      gasMultiplier: 1.2,
-    },
-    bsc: {
-      url: "https://bsc-dataseed.binance.org/",
       accounts: privateKey(),
       gasMultiplier: 1.2,
     },
@@ -89,13 +73,12 @@ const config: HardhatUserConfig = {
     },
   },
   solidity: {
-    version: "0.8.20",
+    version: "0.8.16",
     settings: {
       optimizer: {
         enabled: true,
         runs: 200,
       },
-      evmVersion: "paris",
     },
   },
   etherscan: {
@@ -103,12 +86,10 @@ const config: HardhatUserConfig = {
       goerli: `${process.env.ETHERSCAN_KEY}`,
       sepolia: `${process.env.ETHERSCAN_KEY}`,
       mainnet: `${process.env.ETHERSCAN_KEY}`,
-      bscTestnet: `${process.env.BSCSCAN_KEY}`,
-      bsc: `${process.env.BSCSCAN_KEY}`,
       polygonMumbai: `${process.env.POLYGONSCAN_KEY}`,
       polygon: `${process.env.POLYGONSCAN_KEY}`,
-      avalancheFujiTestnet: `${process.env.AVALANCHE_KEY}`,
       avalanche: `${process.env.AVALANCHE_KEY}`,
+      bsc: `${process.env.BSCSCAN_KEY}`,
     },
   },
   migrate: {
@@ -134,7 +115,7 @@ const config: HardhatUserConfig = {
     target: typechainTarget(),
     alwaysGenerateOverloads: true,
     discriminateTypes: true,
-    dontOverrideCompile: forceTypechain(),
+    dontOverrideCompile: !forceTypechain(),
   },
 };
 
