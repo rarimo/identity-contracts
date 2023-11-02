@@ -28,7 +28,7 @@
     "lint-sol-fix": "prettier --write \"contracts/**/*.sol\""
   },
   "dependencies": {
-    "@solarity/solidity-lib": "2.5.7",
+    "@solarity/solidity-lib": "2.6.6",
     "@openzeppelin/contracts": "4.9.2",
     "@openzeppelin/contracts-upgradeable": "4.9.2",
     "@iden3/contracts": "1.0.0",
