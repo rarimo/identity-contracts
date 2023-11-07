@@ -7,6 +7,9 @@ contract TimeWindowSBT is SBT {
     mapping(uint256 => uint256) public tokenExpired;
     address public verifier;
     uint256 public expiringPeriod;
+    uint256 public nextTokenId;
+
+    event TokenMinted(address to, uint256 tokenId, uint256 expiringTime);
 
     modifier onlyVerifier() {
         require(msg.sender == verifier, "TimeWindowSBT: only verifier can call this function");
@@ -19,6 +22,9 @@ contract TimeWindowSBT is SBT {
         uint256 expiringPeriod_,
         address verifier_
     ) external initializer {
+        require(expiringPeriod_ > 0, "TimeWindowSBT: expiringPeriod must be greater then 0");
+        require(verifier_ != address(0), "TimeWindowSBT: verifier zero address");
+
         __SBT_init(name_, symbol_);
         expiringPeriod = expiringPeriod_;
         verifier = verifier_;
@@ -31,7 +37,7 @@ contract TimeWindowSBT is SBT {
     function balanceOf(address owner_) public view override returns (uint256) {
         uint256[] memory tokens = tokensOf(owner_);
         for (uint256 i; i < tokens.length; i++) {
-            if (tokenExpired[tokens[i]] <= block.timestamp) {
+            if (tokenExpired[tokens[i]] >= block.timestamp) {
                 return 1;
             }
         }
@@ -42,9 +48,19 @@ contract TimeWindowSBT is SBT {
         return tokenExpired[tokenId_] >= block.timestamp ? SBT.ownerOf(tokenId_) : address(0);
     }
 
-    function mint(address to_, uint256 tokenId_) external onlyVerifier {
+    function setExpiringPeriod(uint256 expiringPeriod_) external onlyVerifier {
+        require(expiringPeriod_ > 0, "TimeWindowSBT: expiringPeriod must be greater then 0");
+        expiringPeriod = expiringPeriod_;
+    }
+
+    function mint(address to_) external onlyVerifier {
         require(balanceOf(to_) < 1, "TimeWindowSBT: active SBT already exists");
-        _mint(to_, tokenId_);
+        uint256 nextTokenId_ = nextTokenId;
+        _mint(to_, nextTokenId_);
+
+        nextTokenId = nextTokenId_ + 1;
+
+        emit TokenMinted(to_, nextTokenId_, tokenExpired[nextTokenId_]);
     }
 
     function _beforeTokenAction(address to_, uint256 tokenId_) internal virtual override {
@@ -53,6 +69,8 @@ contract TimeWindowSBT is SBT {
             for (uint256 i; i < tokens.length; i++) {
                 _burn(tokens[i]);
             }
+
+            tokenExpired[tokenId_] = block.timestamp + expiringPeriod;
         }
     }
 }
