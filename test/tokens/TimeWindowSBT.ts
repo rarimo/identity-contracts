@@ -39,19 +39,20 @@ describe("TimeWindowSBT", () => {
     });
 
     it("should revert if try to call init function twice", async () => {
-      expect(twSBT.__TimeWindowSBT_init("name", "symbol", 1, VERIFIER.address)).to.be.revertedWith(
-        "Initializable: the contract is already initialized"
+      await twSBT.__TimeWindowSBT_init("name", "symbol", 1, VERIFIER.address);
+      await expect(twSBT.__TimeWindowSBT_init("name", "symbol", 1, VERIFIER.address)).to.be.revertedWith(
+        "Initializable: contract is already initialized"
       );
     });
 
     it("should revert if pass incorrect parameters", async () => {
       const name = "TimeWindow";
       const symbol = "SBT";
-      expect(twSBT.__TimeWindowSBT_init(name, symbol, 0, VERIFIER.address)).to.be.revertedWith(
+      await expect(twSBT.__TimeWindowSBT_init(name, symbol, 0, VERIFIER.address)).to.be.revertedWith(
         "TimeWindowSBT: expiringPeriod must be greater then 0"
       );
 
-      expect(twSBT.__TimeWindowSBT_init(name, symbol, 1, ZERO_ADDR)).to.be.revertedWith(
+      await expect(twSBT.__TimeWindowSBT_init(name, symbol, 1, ZERO_ADDR)).to.be.revertedWith(
         "TimeWindowSBT: verifier zero address"
       );
     });
@@ -64,19 +65,19 @@ describe("TimeWindowSBT", () => {
 
     it("should set new period", async () => {
       const newPeriod = 8008;
-      await twSBT.connect(VERIFIER).setExpiringPeriod(newPeriod);
+      await twSBT.setExpiringPeriod(newPeriod);
 
       expect(await twSBT.expiringPeriod()).to.be.eq(newPeriod);
     });
 
     it("should revert if new period = 0", async () => {
-      expect(twSBT.connect(VERIFIER).setExpiringPeriod(0)).to.be.revertedWith(
+      await expect(twSBT.setExpiringPeriod(0)).to.be.revertedWith(
         "TimeWindowSBT: expiringPeriod must be greater then 0"
       );
     });
 
     it("should revert if function called by not verifier", async () => {
-      expect(twSBT.setExpiringPeriod(1)).to.be.revertedWith("TimeWindowSBT: only verifier can call this function");
+      await expect(twSBT.connect(SECOND).setExpiringPeriod(1)).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -87,12 +88,20 @@ describe("TimeWindowSBT", () => {
       await twSBT.__TimeWindowSBT_init("name", "symbol", expiringPeriod, VERIFIER.address);
     });
 
-    it("should correctly mint SBT", async () => {
-      const nextId = await twSBT.nextTokenId();
+    it("should correctly mint 2 SBTs", async () => {
+      let nextId = await twSBT.nextTokenId();
       await twSBT.connect(VERIFIER).mint(FIRST.address);
 
       expect(await twSBT.balanceOf(FIRST.address)).to.be.eq(1);
       expect(await twSBT.ownerOf(nextId)).to.be.eq(FIRST.address);
+      expect(await twSBT.tokenExpired(nextId)).to.be.eq(
+        toBN((await ethers.provider.getBlock("latest")).timestamp).plus(expiringPeriod)
+      );
+
+      nextId = await twSBT.nextTokenId();
+      await twSBT.connect(VERIFIER).mint(SECOND.address);
+      expect(await twSBT.balanceOf(SECOND.address)).to.be.eq(1);
+      expect(await twSBT.ownerOf(nextId)).to.be.eq(SECOND.address);
       expect(await twSBT.tokenExpired(nextId)).to.be.eq(
         toBN((await ethers.provider.getBlock("latest")).timestamp).plus(expiringPeriod)
       );
@@ -120,15 +129,13 @@ describe("TimeWindowSBT", () => {
     it("should revert if user already owns token", async () => {
       await twSBT.connect(VERIFIER).mint(FIRST.address);
 
-      expect(twSBT.connect(VERIFIER).mint(FIRST.address)).to.be.revertedWith(
+      await expect(twSBT.connect(VERIFIER).mint(FIRST.address)).to.be.revertedWith(
         "TimeWindowSBT: active SBT already exists"
       );
     });
 
     it("should revert if function called by not verifier", async () => {
-      expect(twSBT.connect(FIRST).mint(FIRST.address)).to.be.revertedWith(
-        "TimeWindowSBT: only verifier can call this function"
-      );
+      await expect(twSBT.mint(FIRST.address)).to.be.revertedWith("TimeWindowSBT: only verifier can call this function");
     });
   });
 

@@ -2,14 +2,15 @@
 pragma solidity ^0.8.16;
 
 import {SBT} from "@solarity/solidity-lib/tokens/SBT.sol";
+import {ITimeWindowSBT} from "../interfaces/tokens/ITimeWindowSBT.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract TimeWindowSBT is SBT {
+contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
+    address public override verifier;
+    uint256 public override expiringPeriod;
+    uint256 public override nextTokenId;
+
     mapping(uint256 => uint256) public tokenExpired;
-    address public verifier;
-    uint256 public expiringPeriod;
-    uint256 public nextTokenId;
-
-    event TokenMinted(address to, uint256 tokenId, uint256 expiringTime);
 
     modifier onlyVerifier() {
         require(msg.sender == verifier, "TimeWindowSBT: only verifier can call this function");
@@ -25,30 +26,14 @@ contract TimeWindowSBT is SBT {
         require(expiringPeriod_ > 0, "TimeWindowSBT: expiringPeriod must be greater then 0");
         require(verifier_ != address(0), "TimeWindowSBT: verifier zero address");
 
+        super.__Ownable_init();
         __SBT_init(name_, symbol_);
+
         expiringPeriod = expiringPeriod_;
         verifier = verifier_;
     }
 
-    function tokenExists(uint256 tokenId_) public view override returns (bool) {
-        return tokenExpired[tokenId_] >= block.timestamp && SBT.tokenExists(tokenId_);
-    }
-
-    function balanceOf(address owner_) public view override returns (uint256) {
-        uint256[] memory tokens = tokensOf(owner_);
-        for (uint256 i; i < tokens.length; i++) {
-            if (tokenExpired[tokens[i]] >= block.timestamp) {
-                return 1;
-            }
-        }
-        return 0;
-    }
-
-    function ownerOf(uint256 tokenId_) public view override returns (address) {
-        return tokenExpired[tokenId_] >= block.timestamp ? SBT.ownerOf(tokenId_) : address(0);
-    }
-
-    function setExpiringPeriod(uint256 expiringPeriod_) external onlyVerifier {
+    function setExpiringPeriod(uint256 expiringPeriod_) external onlyOwner {
         require(expiringPeriod_ > 0, "TimeWindowSBT: expiringPeriod must be greater then 0");
         expiringPeriod = expiringPeriod_;
     }
@@ -63,11 +48,31 @@ contract TimeWindowSBT is SBT {
         emit TokenMinted(to_, nextTokenId_, tokenExpired[nextTokenId_]);
     }
 
+    function isTokenExpired(uint256 tokenId_) public view returns (bool) {
+        return tokenExpired[tokenId_] >= block.timestamp;
+    }
+
+    function tokenExists(uint256 tokenId_) public view override returns (bool) {
+        return isTokenExpired(tokenId_) && SBT.tokenExists(tokenId_);
+    }
+
+    function balanceOf(address owner_) public view override returns (uint256) {
+        uint256[] memory tokens = tokensOf(owner_);
+        if (tokens.length > 0 && isTokenExpired(tokens[0])) {
+            return 1;
+        }
+        return 0;
+    }
+
+    function ownerOf(uint256 tokenId_) public view override returns (address) {
+        return isTokenExpired(tokenId_) ? SBT.ownerOf(tokenId_) : address(0);
+    }
+
     function _beforeTokenAction(address to_, uint256 tokenId_) internal virtual override {
         if (to_ != address(0)) {
             uint256[] memory tokens = tokensOf(to_);
-            for (uint256 i; i < tokens.length; i++) {
-                _burn(tokens[i]);
+            if (tokens.length > 0) {
+                _burn(tokens[0]);
             }
 
             tokenExpired[tokenId_] = block.timestamp + expiringPeriod;
