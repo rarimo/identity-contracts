@@ -26,7 +26,7 @@ contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
         require(expiringPeriod_ > 0, "TimeWindowSBT: expiringPeriod must be greater then 0");
         require(verifier_ != address(0), "TimeWindowSBT: verifier zero address");
 
-        super.__Ownable_init();
+        __Ownable_init();
         __SBT_init(name_, symbol_);
 
         expiringPeriod = expiringPeriod_;
@@ -40,10 +40,8 @@ contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
 
     function mint(address to_) external onlyVerifier {
         require(balanceOf(to_) < 1, "TimeWindowSBT: active SBT already exists");
-        uint256 nextTokenId_ = nextTokenId;
+        uint256 nextTokenId_ = nextTokenId++;
         _mint(to_, nextTokenId_);
-
-        nextTokenId = nextTokenId_ + 1;
 
         emit TokenMinted(to_, nextTokenId_, tokenExpired[nextTokenId_]);
     }
