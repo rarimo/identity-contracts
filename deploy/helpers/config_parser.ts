@@ -3,6 +3,12 @@ import { ZERO_ADDR } from "@/scripts/utils/constants";
 import { ethers } from "hardhat";
 import { BigNumberish } from "@ethersproject/bignumber";
 
+export enum IdentityVerifierType {
+  IdentityVerifer = "IdentityVerifier",
+  SBTIdentityVerifer = "SBTIdentityVerifier",
+  TimeWindowSBTIdentityVerifer = "TimeWindowSBTIdentityVerifier",
+}
+
 export type Config = {
   validatorContractInfo: ValidatorContractInfo;
   stateContractInfo: StateContractInfo;
@@ -27,7 +33,7 @@ export type StateContractInfo = {
 export type IdentityVerifierInfo = {
   identityVerifierAddr?: string;
   verifierInitParams?: IdentityVerifierInitParams;
-  isSBTIdentityVerifier: boolean | string;
+  identityVerifierType: IdentityVerifierType;
 };
 
 export type StateInitParams = {
@@ -46,6 +52,7 @@ export type VerifiedSBTInfo = {
   name: string;
   symbol: string;
   tokenURI: string;
+  expirationPeriod?: BigNumberish;
 };
 
 export type ZKPQueryInfo = {
@@ -119,9 +126,14 @@ function validateStateInitParams(stateInitParams: StateInitParams) {
 }
 
 function validateIdentityVerifierInfo(identityVerifierInfo: IdentityVerifierInfo) {
-  identityVerifierInfo.isSBTIdentityVerifier = identityVerifierInfo.isSBTIdentityVerifier == "true";
+  if (!Object.values(IdentityVerifierType).includes(identityVerifierInfo.identityVerifierType)) {
+    throw new Error("Invalid identityVerifierType field");
+  }
 
-  if (identityVerifierInfo.isSBTIdentityVerifier) {
+  if (
+    identityVerifierInfo.identityVerifierType == IdentityVerifierType.SBTIdentityVerifer ||
+    identityVerifierInfo.identityVerifierType == IdentityVerifierType.TimeWindowSBTIdentityVerifer
+  ) {
     if (identityVerifierInfo.verifierInitParams == undefined) {
       throw new Error(`Invalid SBT identity verifier init params.`);
     }
@@ -134,6 +146,13 @@ function validateIdentityVerifierInfo(identityVerifierInfo: IdentityVerifierInfo
       nonEmptyFiled(identityVerifierInfo.verifierInitParams.verifiedSBTInfo.name, "verifiedSBT name");
       nonEmptyFiled(identityVerifierInfo.verifierInitParams.verifiedSBTInfo.symbol, "verifiedSBT symbol");
       nonEmptyFiled(identityVerifierInfo.verifierInitParams.verifiedSBTInfo.tokenURI, "verifiedSBT tokenURI");
+
+      if (identityVerifierInfo.identityVerifierType == IdentityVerifierType.TimeWindowSBTIdentityVerifer) {
+        nonEmptyFiled(
+          identityVerifierInfo.verifierInitParams.verifiedSBTInfo.expirationPeriod?.toString(),
+          "timeWindowSBT expirationPeriod"
+        );
+      }
     }
   }
 }

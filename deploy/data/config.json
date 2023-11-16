@@ -23,10 +23,11 @@
       "verifiedSBTInfo": {
         "name": "testSBT",
         "symbol": "TSBT",
-        "tokenURI": "test uri"
+        "tokenURI": "test uri",
+        "expirationPeriod": "3600"
       }
     },
-    "isSBTIdentityVerifier": "true"
+    "identityVerifierType": "TimeWindowSBTIdentityVerifier"
   },
   "zkpQueries": [
     {

@@ -12,7 +12,7 @@ import {BaseVerifier} from "./BaseVerifier.sol";
 contract SBTIdentityVerifier is ISBTIdentityVerifier, BaseVerifier {
     string public constant SBT_IDENTITY_PROOF_QUERY_ID = "SBT_IDENTITY_PROOF";
 
-    IVerifiedSBT public sbtToken;
+    address public sbtToken;
 
     mapping(address => uint256) public override addressToIdentityId;
 
@@ -20,7 +20,7 @@ contract SBTIdentityVerifier is ISBTIdentityVerifier, BaseVerifier {
 
     function __SBTIdentityVerifier_init(
         IZKPQueriesStorage zkpQueriesStorage_,
-        IVerifiedSBT sbtToken_
+        address sbtToken_
     ) external initializer {
         __BaseVerifier_init(zkpQueriesStorage_);
 
@@ -46,14 +46,14 @@ contract SBTIdentityVerifier is ISBTIdentityVerifier, BaseVerifier {
     }
 
     function isIdentityProved(address userAddr_) external view override returns (bool) {
-        return _identitiesProofInfo[addressToIdentityId[userAddr_]].isProved;
+        return isIdentityProved(addressToIdentityId[userAddr_]);
     }
 
-    function isIdentityProved(uint256 identityId_) public view override returns (bool) {
+    function isIdentityProved(uint256 identityId_) public view virtual override returns (bool) {
         return _identitiesProofInfo[identityId_].isProved;
     }
 
-    function _proveIdentity(ProveIdentityParams calldata proveIdentityParams_) internal {
+    function _proveIdentity(ProveIdentityParams calldata proveIdentityParams_) internal virtual {
         _verify(SBT_IDENTITY_PROOF_QUERY_ID, proveIdentityParams_);
 
         require(
@@ -72,12 +72,12 @@ contract SBTIdentityVerifier is ISBTIdentityVerifier, BaseVerifier {
             "IdentityVerifier: Identity has already been proven."
         );
 
-        uint256 newTokenId_ = sbtToken.nextTokenId();
-        sbtToken.mint(msg.sender);
+        uint256 newTokenId_ = IVerifiedSBT(sbtToken).nextTokenId();
+        IVerifiedSBT(sbtToken).mint(msg.sender);
 
         addressToIdentityId[msg.sender] = identityId_;
         _identitiesProofInfo[identityId_] = SBTIdentityProofInfo(msg.sender, newTokenId_, true);
 
-        emit SBTIdentityProved(identityId_, msg.sender, address(sbtToken), newTokenId_);
+        emit SBTIdentityProved(identityId_, msg.sender, sbtToken, newTokenId_);
     }
 }
