@@ -37,16 +37,17 @@ contract TimeWindowSBTIdentityVerifier is ITimeWindowSBTIdentityVerifier, SBTIde
     function _proveIdentity(ProveIdentityParams calldata proveIdentityParams_) internal override {
         _verify(TIME_WINDOW_SBT_IDENTITY_PROOF_QUERY_ID, proveIdentityParams_);
 
-        require(
-            addressToIdentityId[msg.sender] == 0,
-            "TimeWindowSBTIdentityVerifier: Msg sender address has already been used to prove the another identity."
-        );
-
         IQueryValidator queryValidator_ = IQueryValidator(
             zkpQueriesStorage.getQueryValidator(TIME_WINDOW_SBT_IDENTITY_PROOF_QUERY_ID)
         );
 
         uint256 identityId_ = proveIdentityParams_.inputs[queryValidator_.getUserIdIndex()];
+        uint256 storedIdentityId_ = addressToIdentityId[msg.sender];
+
+        require(
+            storedIdentityId_ == 0 || storedIdentityId_ == identityId_,
+            "TimeWindowSBTIdentityVerifier: Msg sender address has already been used to prove the another identity."
+        );
 
         require(
             !isIdentityProved(identityId_),

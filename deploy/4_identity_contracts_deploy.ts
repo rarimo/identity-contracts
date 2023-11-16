@@ -6,6 +6,7 @@ import {
   getDeployedStateContract,
   getDeployedQueryValidatorContract,
   getDeployedVerifierContract,
+  getDeployedSBTTokenInfo,
 } from "@/deploy/helpers/deploy_helper";
 
 const ERC1967Proxy = artifacts.require("ERC1967Proxy");
@@ -48,8 +49,8 @@ export = async (deployer: Deployer, logger: Logger) => {
     (await getDeployedQueryValidatorContract(config.validatorContractInfo.isMtpValidator)).address,
   ];
   const verifierInfo = [
-    config.identityVerifierInfo.isSBTIdentityVerifier ? "SBTIdentityVerifier" : "IdentityVerifier",
-    (await getDeployedVerifierContract(config.identityVerifierInfo.isSBTIdentityVerifier)).address,
+    config.identityVerifierInfo.identityVerifierType,
+    (await getDeployedVerifierContract(config.identityVerifierInfo.identityVerifierType)).address,
   ];
 
   logger.logContracts(
@@ -57,6 +58,7 @@ export = async (deployer: Deployer, logger: Logger) => {
     validatorsInfo,
     verifierInfo,
     ["ZKPQueriesStorage", zkpQueriesStorage.address],
-    ["PoseidonFacade", poseidonFacade.address]
+    ["PoseidonFacade", poseidonFacade.address],
+    await getDeployedSBTTokenInfo(config.identityVerifierInfo.identityVerifierType)
   );
 };

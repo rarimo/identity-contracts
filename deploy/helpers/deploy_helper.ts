@@ -1,6 +1,6 @@
 import { Deployer, Logger } from "@solarity/hardhat-migrate";
 import { ethers, artifacts } from "hardhat";
-import { Config, isZeroAddr } from "./config_parser";
+import { Config, IdentityVerifierType, isZeroAddr } from "./config_parser";
 
 const { poseidonContract } = require("circomlibjs");
 
@@ -18,6 +18,7 @@ const SmtLib = artifacts.require("SmtLib");
 const StateLib = artifacts.require("StateLib");
 
 const VerifiedSBT = artifacts.require("VerifiedSBT");
+const TimeWindowSBT = artifacts.require("TimeWindowSBT");
 
 const QueryMTPValidator = artifacts.require("QueryMTPValidator");
 const QuerySigValidator = artifacts.require("QuerySigValidator");
@@ -29,6 +30,7 @@ const ZKPQueriesStorage = artifacts.require("ZKPQueriesStorage");
 
 const IdentityVerifier = artifacts.require("IdentityVerifier");
 const SBTIdentityVerifier = artifacts.require("SBTIdentityVerifier");
+const TimeWindowSBTIdentityVerifier = artifacts.require("TimeWindowSBTIdentityVerifier");
 
 import * as dotenv from "dotenv";
 dotenv.config();
@@ -105,10 +107,18 @@ export async function deployState(deployer: Deployer, logger: Logger, config: Co
 }
 
 export async function deployVerifier(deployer: Deployer, logger: Logger, config: Config) {
-  if (config.identityVerifierInfo.isSBTIdentityVerifier) {
-    await deploySBTIdentityVerifier(deployer, logger, config);
-  } else {
-    await deployIdentityVerifier(deployer, logger, config);
+  switch (config.identityVerifierInfo.identityVerifierType) {
+    case IdentityVerifierType.IdentityVerifer:
+      await deployIdentityVerifier(deployer, logger, config);
+      break;
+    case IdentityVerifierType.SBTIdentityVerifer:
+      await deploySBTIdentityVerifier(deployer, logger, config);
+      break;
+    case IdentityVerifierType.TimeWindowSBTIdentityVerifer:
+      await deployTimeWindowSBTIdentityVerifier(deployer, logger, config);
+      break;
+    default:
+      throw new Error("Unsupported Identity verifier type");
   }
 }
 
@@ -120,8 +130,26 @@ export async function getDeployedStateContract(isLightweight: boolean | string) 
   return isLightweight ? await LightweightState.deployed() : await State.deployed();
 }
 
-export async function getDeployedVerifierContract(isSBTIdentityVerifier: boolean | string) {
-  return isSBTIdentityVerifier ? await SBTIdentityVerifier.deployed() : await IdentityVerifier.deployed();
+export async function getDeployedVerifierContract(identityVerifierType: IdentityVerifierType) {
+  switch (identityVerifierType) {
+    case IdentityVerifierType.IdentityVerifer:
+      return await IdentityVerifier.deployed();
+    case IdentityVerifierType.SBTIdentityVerifer:
+      return await SBTIdentityVerifier.deployed();
+    case IdentityVerifierType.TimeWindowSBTIdentityVerifer:
+      return await TimeWindowSBTIdentityVerifier.deployed();
+  }
+}
+
+export async function getDeployedSBTTokenInfo(identityVerifierType: IdentityVerifierType) {
+  switch (identityVerifierType) {
+    case IdentityVerifierType.IdentityVerifer:
+      return ["", ""];
+    case IdentityVerifierType.SBTIdentityVerifer:
+      return ["VerifiedSBT", (await VerifiedSBT.deployed()).address];
+    case IdentityVerifierType.TimeWindowSBTIdentityVerifer:
+      return ["TimeWindowSBT", (await TimeWindowSBT.deployed()).address];
+  }
 }
 
 async function deployMTPValidator(
@@ -307,4 +335,53 @@ async function deploySBTIdentityVerifier(deployer: Deployer, logger: Logger, con
   }
 
   await SBTIdentityVerifier.setAsDeployed(sbtIdentityVerifier);
+}
+
+async function deployTimeWindowSBTIdentityVerifier(deployer: Deployer, logger: Logger, config: Config) {
+  let timeWindowSBTIdentityVerifier;
+
+  if (isZeroAddr(config.identityVerifierInfo.identityVerifierAddr)) {
+    const timeWindowSBTIdentityVerifierImpl = await deployer.deploy(TimeWindowSBTIdentityVerifier);
+    const timeWindowSBTIdentityVerifierProxy = await deployer.deploy(
+      ERC1967Proxy,
+      timeWindowSBTIdentityVerifierImpl.address,
+      []
+    );
+
+    timeWindowSBTIdentityVerifier = await TimeWindowSBTIdentityVerifier.at(timeWindowSBTIdentityVerifierProxy.address);
+
+    const zkpQueriesStorage = await ZKPQueriesStorage.deployed();
+    let timeWindowSBT;
+
+    if (isZeroAddr(config.identityVerifierInfo.verifierInitParams?.verifiedSBTAddr)) {
+      const timeWindowSBTImpl = await deployer.deploy(TimeWindowSBT);
+      const timeWindowSBTProxy = await deployer.deploy(ERC1967Proxy, timeWindowSBTImpl.address, []);
+
+      timeWindowSBT = await TimeWindowSBT.at(timeWindowSBTProxy.address);
+
+      logger.logTransaction(
+        await timeWindowSBT.__TimeWindowSBT_init(
+          timeWindowSBTIdentityVerifier.address,
+          config.identityVerifierInfo.verifierInitParams?.verifiedSBTInfo?.expirationPeriod,
+          config.identityVerifierInfo.verifierInitParams?.verifiedSBTInfo?.name,
+          config.identityVerifierInfo.verifierInitParams?.verifiedSBTInfo?.symbol,
+          config.identityVerifierInfo.verifierInitParams?.verifiedSBTInfo?.tokenURI
+        ),
+        "Initialize TimeWindowSBT contract"
+      );
+    } else {
+      timeWindowSBT = await TimeWindowSBT.at(config.identityVerifierInfo.verifierInitParams?.verifiedSBTAddr);
+    }
+
+    logger.logTransaction(
+      await timeWindowSBTIdentityVerifier.__SBTIdentityVerifier_init(zkpQueriesStorage.address, timeWindowSBT.address),
+      "Initialize TimeWindowSBTIdentityVerifier contract"
+    );
+  } else {
+    timeWindowSBTIdentityVerifier = await TimeWindowSBTIdentityVerifier.at(
+      config.identityVerifierInfo.identityVerifierAddr
+    );
+  }
+
+  await TimeWindowSBTIdentityVerifier.setAsDeployed(timeWindowSBTIdentityVerifier);
 }
