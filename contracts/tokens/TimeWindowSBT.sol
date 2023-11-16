@@ -9,10 +9,10 @@ import {ITimeWindowSBT} from "../interfaces/tokens/ITimeWindowSBT.sol";
 
 contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
     address public override verifier;
-    uint256 public override expiringPeriod;
+    uint256 public override expirationPeriod;
     uint256 public override nextTokenId;
 
-    mapping(uint256 => uint256) public override tokensExpiringTime;
+    mapping(uint256 => uint256) public override tokensExpirationTime;
 
     modifier onlyVerifier() {
         require(msg.sender == verifier, "TimeWindowSBT: only verifier can call this function");
@@ -21,7 +21,7 @@ contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
 
     function __TimeWindowSBT_init(
         address verifier_,
-        uint256 expiringPeriod_,
+        uint256 expirationPeriod_,
         string memory name_,
         string memory symbol_,
         string calldata baseURI_
@@ -30,12 +30,12 @@ contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
         __SBT_init(name_, symbol_);
 
         _setBaseURI(baseURI_);
-        _setExpiringPeriod(expiringPeriod_);
+        _setExpirationPeriod(expirationPeriod_);
         _setVerifier(verifier_);
     }
 
-    function setExpiringPeriod(uint256 expiringPeriod_) external onlyOwner {
-        _setExpiringPeriod(expiringPeriod_);
+    function setExpirationPeriod(uint256 expirationPeriod_) external onlyOwner {
+        _setExpirationPeriod(expirationPeriod_);
     }
 
     function setVerifier(address newVerifier_) external override onlyOwner {
@@ -53,11 +53,11 @@ contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
 
         _mint(to_, nextTokenId_);
 
-        emit TokenMinted(to_, nextTokenId_, tokensExpiringTime[nextTokenId_]);
+        emit TokenMinted(to_, nextTokenId_, tokensExpirationTime[nextTokenId_]);
     }
 
     function isTokenExpired(uint256 tokenId_) public view returns (bool) {
-        return tokensExpiringTime[tokenId_] < block.timestamp;
+        return tokensExpirationTime[tokenId_] < block.timestamp;
     }
 
     function tokenExists(uint256 tokenId_) public view override returns (bool) {
@@ -80,10 +80,10 @@ contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
         return baseURI();
     }
 
-    function _setExpiringPeriod(uint256 expiringPeriod_) internal {
-        require(expiringPeriod_ > 0, "TimeWindowSBT: expiringPeriod must be greater then 0");
+    function _setExpirationPeriod(uint256 expirationPeriod_) internal {
+        require(expirationPeriod_ > 0, "TimeWindowSBT: expirationPeriod must be greater then 0");
 
-        expiringPeriod = expiringPeriod_;
+        expirationPeriod = expirationPeriod_;
     }
 
     function _setVerifier(address newVerifier_) internal {
@@ -100,7 +100,7 @@ contract TimeWindowSBT is SBT, ITimeWindowSBT, OwnableUpgradeable {
                 _burn(tokens_[0]);
             }
 
-            tokensExpiringTime[tokenId_] = block.timestamp + expiringPeriod;
+            tokensExpirationTime[tokenId_] = block.timestamp + expirationPeriod;
         }
     }
 }

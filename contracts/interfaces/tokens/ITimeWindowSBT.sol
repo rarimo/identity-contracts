@@ -6,13 +6,13 @@ interface ITimeWindowSBT {
 
     function verifier() external view returns (address);
 
-    function expiringPeriod() external view returns (uint256);
+    function expirationPeriod() external view returns (uint256);
 
     function nextTokenId() external view returns (uint256);
 
     function __TimeWindowSBT_init(
         address verifier_,
-        uint256 expiringPeriod_,
+        uint256 expirationPeriod_,
         string memory name_,
         string memory symbol_,
         string calldata baseURI_
@@ -22,9 +22,11 @@ interface ITimeWindowSBT {
 
     function setTokensURI(string calldata newTokensURI_) external;
 
-    function setExpiringPeriod(uint256 expiringPeriod_) external;
+    function setExpirationPeriod(uint256 expirationPeriod_) external;
+
+    function mint(address to_) external;
 
     function isTokenExpired(uint256 tokenId_) external view returns (bool);
 
-    function tokensExpiringTime(uint256 tokenId_) external view returns (uint256);
+    function tokensExpirationTime(uint256 tokenId_) external view returns (uint256);
 }

@@ -12,7 +12,7 @@ describe("TimeWindowSBT", () => {
   const name = "TimeWindow";
   const symbol = "SBT";
   const tokenURI = "some token URI";
-  const expiringPeriod = 3600;
+  const expirationPeriod = 3600;
 
   let FIRST: SignerWithAddress;
   let SECOND: SignerWithAddress;
@@ -26,7 +26,7 @@ describe("TimeWindowSBT", () => {
     const TimeWindowSBTFactory = await ethers.getContractFactory("TimeWindowSBT");
     twSBT = await TimeWindowSBTFactory.deploy();
 
-    await twSBT.__TimeWindowSBT_init(VERIFIER.address, expiringPeriod, name, symbol, tokenURI);
+    await twSBT.__TimeWindowSBT_init(VERIFIER.address, expirationPeriod, name, symbol, tokenURI);
 
     await reverter.snapshot();
   });
@@ -38,13 +38,13 @@ describe("TimeWindowSBT", () => {
       expect(await twSBT.name()).to.be.eq(name);
       expect(await twSBT.symbol()).to.be.eq(symbol);
       expect(await twSBT.baseURI()).to.be.eq(tokenURI);
-      expect(await twSBT.expiringPeriod()).to.be.eq(expiringPeriod);
+      expect(await twSBT.expirationPeriod()).to.be.eq(expirationPeriod);
       expect(await twSBT.verifier()).to.be.eq(VERIFIER.address);
     });
 
     it("should revert if try to call init function twice", async () => {
       await expect(
-        twSBT.__TimeWindowSBT_init(VERIFIER.address, expiringPeriod, name, symbol, tokenURI)
+        twSBT.__TimeWindowSBT_init(VERIFIER.address, expirationPeriod, name, symbol, tokenURI)
       ).to.be.revertedWith("Initializable: contract is already initialized");
     });
 
@@ -53,12 +53,12 @@ describe("TimeWindowSBT", () => {
       const newTWSBT = await TimeWindowSBTFactory.deploy();
 
       await expect(newTWSBT.__TimeWindowSBT_init(VERIFIER.address, 0, name, symbol, tokenURI)).to.be.revertedWith(
-        "TimeWindowSBT: expiringPeriod must be greater then 0"
+        "TimeWindowSBT: expirationPeriod must be greater then 0"
       );
 
-      await expect(newTWSBT.__TimeWindowSBT_init(ZERO_ADDR, expiringPeriod, name, symbol, tokenURI)).to.be.revertedWith(
-        "TimeWindowSBT: verifier zero address"
-      );
+      await expect(
+        newTWSBT.__TimeWindowSBT_init(ZERO_ADDR, expirationPeriod, name, symbol, tokenURI)
+      ).to.be.revertedWith("TimeWindowSBT: verifier zero address");
     });
   });
 
@@ -104,22 +104,22 @@ describe("TimeWindowSBT", () => {
     });
   });
 
-  describe("setExpiringPeriod", () => {
+  describe("setExpirationPeriod", () => {
     it("should set new period", async () => {
       const newPeriod = 8008;
-      await twSBT.setExpiringPeriod(newPeriod);
+      await twSBT.setExpirationPeriod(newPeriod);
 
-      expect(await twSBT.expiringPeriod()).to.be.eq(newPeriod);
+      expect(await twSBT.expirationPeriod()).to.be.eq(newPeriod);
     });
 
     it("should revert if new period = 0", async () => {
-      await expect(twSBT.setExpiringPeriod(0)).to.be.revertedWith(
-        "TimeWindowSBT: expiringPeriod must be greater then 0"
+      await expect(twSBT.setExpirationPeriod(0)).to.be.revertedWith(
+        "TimeWindowSBT: expirationPeriod must be greater then 0"
       );
     });
 
     it("should revert if function called by not verifier", async () => {
-      await expect(twSBT.connect(SECOND).setExpiringPeriod(1)).to.be.revertedWith("Ownable: caller is not the owner");
+      await expect(twSBT.connect(SECOND).setExpirationPeriod(1)).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -131,16 +131,16 @@ describe("TimeWindowSBT", () => {
 
       expect(await twSBT.balanceOf(FIRST.address)).to.be.eq(1);
       expect(await twSBT.ownerOf(nextId)).to.be.eq(FIRST.address);
-      expect(await twSBT.tokensExpiringTime(nextId)).to.be.eq(
-        toBN((await ethers.provider.getBlock("latest")).timestamp).plus(expiringPeriod)
+      expect(await twSBT.tokensExpirationTime(nextId)).to.be.eq(
+        toBN((await ethers.provider.getBlock("latest")).timestamp).plus(expirationPeriod)
       );
 
       nextId = await twSBT.nextTokenId();
       await twSBT.connect(VERIFIER).mint(SECOND.address);
       expect(await twSBT.balanceOf(SECOND.address)).to.be.eq(1);
       expect(await twSBT.ownerOf(nextId)).to.be.eq(SECOND.address);
-      expect(await twSBT.tokensExpiringTime(nextId)).to.be.eq(
-        toBN((await ethers.provider.getBlock("latest")).timestamp).plus(expiringPeriod)
+      expect(await twSBT.tokensExpirationTime(nextId)).to.be.eq(
+        toBN((await ethers.provider.getBlock("latest")).timestamp).plus(expirationPeriod)
       );
     });
 
@@ -150,7 +150,7 @@ describe("TimeWindowSBT", () => {
 
       const nextIdAfter = await twSBT.nextTokenId();
 
-      await ethers.provider.send("evm_increaseTime", [expiringPeriod + 1]);
+      await ethers.provider.send("evm_increaseTime", [expirationPeriod + 1]);
       await ethers.provider.send("evm_mine", []);
 
       await twSBT.connect(VERIFIER).mint(FIRST.address);
@@ -198,7 +198,7 @@ describe("TimeWindowSBT", () => {
     it("token expired", async () => {
       await twSBT.connect(VERIFIER).mint(FIRST.address);
 
-      await ethers.provider.send("evm_increaseTime", [expiringPeriod + 1]);
+      await ethers.provider.send("evm_increaseTime", [expirationPeriod + 1]);
       await ethers.provider.send("evm_mine", []);
 
       expect(await twSBT.tokenExists(1)).to.be.false;
