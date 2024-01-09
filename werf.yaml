@@ -1,0 +1,6 @@
+configVersion: 1
+project: "state-contract"
+---
+image: deployer
+dockerfile: docker/Dockerfile
+

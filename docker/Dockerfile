@@ -5,11 +5,10 @@ WORKDIR /identity-contracts
 
 COPY docker/package.json ./
 COPY docker/package-lock.json ./
-COPY docker/hardhat.config.js ./
+COPY docker/hardhat.config.ts ./
 
-COPY contracts ./contracts
-COPY deploy ./deploy
-COPY scripts ./scripts
+COPY contracts ./
+COPY deploy ./
 
 RUN npm install
 
