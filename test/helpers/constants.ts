@@ -1,1 +1,0 @@
-export const IDENTITY_PROOF_QUERY_ID = "IDENTITY_PROOF";

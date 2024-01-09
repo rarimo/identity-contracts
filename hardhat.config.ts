@@ -1,6 +1,6 @@
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-truffle5";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import "@typechain/hardhat";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@solarity/hardhat-migrate";
@@ -23,7 +23,7 @@ function privateKey() {
 function typechainTarget() {
   const target = process.env.TYPECHAIN_TARGET;
 
-  return target === "" || target === undefined ? "ethers-v5" : target;
+  return target === "" || target === undefined ? "ethers-v6" : target;
 }
 
 function forceTypechain() {
