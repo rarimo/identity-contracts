@@ -1,6 +1,9 @@
 name: Build Rarimo State contract deployer docker image
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'state-docker'
 
 jobs:
   converge:
