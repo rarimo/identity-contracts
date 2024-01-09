@@ -1,0 +1,28 @@
+{
+  "name": "identity-contracts",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Rarimo Foundation",
+  "description": "",
+  "scripts": {
+    "compile": "npx hardhat compile --force",
+    "deploy-dev": "npx hardhat migrate --network dev"
+  },
+  "dependencies": {
+    "@solarity/solidity-lib": "2.5.7",
+    "@openzeppelin/contracts": "4.9.2",
+    "@openzeppelin/contracts-upgradeable": "4.9.2",
+    "@iden3/contracts": "1.0.0",
+    "@rarimo/evm-bridge-contracts": "1.0.0",
+    "dotenv": "^10.0.0",
+    "hardhat": "^2.12.0",
+    "solc": "0.8.16"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-truffle5": "^2.0.1",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@solarity/hardhat-migrate": "^2.0.1",
+    "bignumber.js": "^9.0.1",
+    "web3": "^1.7.5"
+  }
+}

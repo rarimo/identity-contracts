@@ -41,7 +41,7 @@
   "devDependencies": {
     "@solarity/hardhat-gobind": "^1.0.5",
     "@solarity/hardhat-markup": "^1.0.2",
-    "@solarity/hardhat-migrate": "^1.5.9",
+    "@solarity/hardhat-migrate": "^2.0.1",
     "@metamask/eth-sig-util": "^4.0.0",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
