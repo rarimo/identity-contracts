@@ -1,7 +1,7 @@
 import { Deployer } from "@solarity/hardhat-migrate";
 import { artifacts } from "hardhat";
 import { ethers } from "hardhat";
-import { deployPoseidons } from "@/deploy/helpers/deploy_helper";
+import { deployPoseidons } from "./helpers/deploy_helper";
 import fs from "fs";
 
 const PoseidonUnit1L = artifacts.require("PoseidonUnit1L");
@@ -24,14 +24,14 @@ export = async (deployer: Deployer) => {
   const poseidonsAddresses = await deployPoseidons((await ethers.getSigners())[0], [1, 2, 3]);
 
   const poseidons = [
-    await PoseidonUnit1L.at(poseidonsAddresses[0].address),
-    await PoseidonUnit2L.at(poseidonsAddresses[1].address),
-    await PoseidonUnit3L.at(poseidonsAddresses[2].address),
+    await PoseidonUnit1L.at(await poseidonsAddresses[0].getAddress()),
+    await PoseidonUnit2L.at(await poseidonsAddresses[1].getAddress()),
+    await PoseidonUnit3L.at(await poseidonsAddresses[2].getAddress()),
   ];
 
-  await deployer.deployed(PoseidonUnit1L, poseidonsAddresses[0].address);
-  await deployer.deployed(PoseidonUnit2L, poseidonsAddresses[1].address);
-  await deployer.deployed(PoseidonUnit3L, poseidonsAddresses[2].address);
+  await deployer.deployed(PoseidonUnit1L, await poseidonsAddresses[0].getAddress());
+  await deployer.deployed(PoseidonUnit2L, await poseidonsAddresses[1].getAddress());
+  await deployer.deployed(PoseidonUnit3L, await poseidonsAddresses[2].getAddress());
 
   const stateVerifier = await deployer.deploy(StateVerifier);
 
@@ -64,8 +64,6 @@ export = async (deployer: Deployer) => {
   const jsonInfo = JSON.stringify({
     state: stateContract.address,
   });
-
-  console.log(jsonInfo);
 
   fs.writeFileSync(filePath, jsonInfo);
 };

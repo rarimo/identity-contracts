@@ -1,16 +1,19 @@
-require("@nomiclabs/hardhat-web3");
-require("@nomiclabs/hardhat-truffle5");
-require("@solarity/hardhat-migrate");
+import "@nomicfoundation/hardhat-ethers";
+import "@nomiclabs/hardhat-web3";
+import "@nomiclabs/hardhat-truffle5";
+import "@solarity/hardhat-migrate";
 
-const { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } = require("hardhat/builtin-tasks/task-names");
+import { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } from "hardhat/builtin-tasks/task-names";
+import { subtask } from "hardhat/config";
 
 const path = require("path");
-const dotenv = require("dotenv");
+
+import * as dotenv from "dotenv";
 dotenv.config();
 
 const SOLC_VERSION = "0.8.16";
 
-subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args, hre, runSuper) => {
+subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args: any, hre, runSuper) => {
   if (args.solcVersion === SOLC_VERSION) {
     const compilerPath = path.join(__dirname, "/node_modules/solc/soljson.js");
 
