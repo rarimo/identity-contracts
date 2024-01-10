@@ -1,6 +1,5 @@
 import { ethers } from "hardhat";
-
-const { poseidonContract } = require("circomlibjs");
+import { poseidonContract } from "circomlibjs";
 
 import * as dotenv from "dotenv";
 dotenv.config();

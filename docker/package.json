@@ -9,23 +9,25 @@
     "deploy-dev": "npx hardhat migrate --network dev"
   },
   "dependencies": {
-    "@solarity/solidity-lib": "2.5.7",
+    "@iden3/contracts": "1.0.0",
     "@openzeppelin/contracts": "4.9.2",
     "@openzeppelin/contracts-upgradeable": "4.9.2",
-    "@iden3/contracts": "1.0.0",
     "@rarimo/evm-bridge-contracts": "1.0.0",
-    "solidity-bytes-utils": "^0.8.0",
+    "@solarity/solidity-lib": "2.5.7",
     "dotenv": "^10.0.0",
     "hardhat": "^2.12.0",
-    "solc": "0.8.16"
+    "solc": "0.8.16",
+    "solidity-bytes-utils": "^0.8.0"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomiclabs/hardhat-truffle5": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@solarity/hardhat-migrate": "^2.0.1",
-    "circomlibjs": "^0.1.7",
+    "@types/circomlibjs": "^0.1.6",
     "bignumber.js": "^9.0.1",
+    "circomlibjs": "^0.1.7",
+    "ts-node": "^10.9.2",
     "web3": "^1.7.5"
   }
 }
